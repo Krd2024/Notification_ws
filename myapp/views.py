@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
-from .models import Notification, User
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.hashers import make_password
+from datetime import datetime
+
+from .models import Notification, User
 
 
 def index(request):
@@ -76,6 +78,25 @@ def notifications(request):
 
 def accepted(request, **kwargs):
     print(request.GET.get("q"))
+    millis = 1722584887426
+    cutoff_date = datetime.fromtimestamp(
+        millis / 1000.0
+    )  # делим на 1000, чтобы получить секунды
+
+    # Выполняем запрос на удаление уведомлений, созданных раньше указанной даты
+    notifications_to_read = Notification.objects.filter(
+        created_at__lt=cutoff_date, is_read=False
+    )
+    read_list = ""
+    for mes in notifications_to_read:
+        mes.is_read = True
+        mes.save()
+        read_list += f"{mes.sender}\n"
+
+    print(
+        f"Отмечено прочитанным {len(notifications_to_read)} уведомлений, созданных раньше {cutoff_date}.От\n{read_list}"
+    )
+
     return JsonResponse({"res": "Sdelano"})
     # return redirect("home")
 

@@ -1,74 +1,85 @@
 {% extends 'myapp/main.html' %}
 
 {% block content %}
-  <div>
-    {% for user in users %}
-      {% if user != request.user %}
-        <div class="user">
-          <p>{{ user.username }}</p>
-          <form id="form" method="post" action="{% url 'notifications_create' %}">
-            {% csrf_token %}
-            <input type="text" name="username" value="{{ user.username }}" style="display: none;" />
-            <input type="submit" value="Дать сигнал" />
-          </form>
-        </div>
-      {% endif %}
-    {% endfor %}
-  </div>
-  <div class="notifications">
-    <p>Не отмеченный сигнал:</p>
-    {% for notific in notifications %}
-      <p>От {{ notific.sender }}</p>
-    {% endfor %}
-    <div class="ans_read">
-      <button onclick="read()">otmetit</button>
-      <div id="answer"></div>
+  {% if request.user.is_authenticated %}
+    <div>
+      {% for user in users %}
+        {% if user != request.user %}
+          <div class="user">
+            <p>{{ user.username }}</p>
+            <form id="form" method="post" action="{% url 'notifications_create' %}">
+              {% csrf_token %}
+              <input type="text" name="username" value="{{ user.username }}" style="display: none;" />
+              <input type="submit" value="Дать сигнал" />
+            </form>
+          </div>
+        {% endif %}
+      {% endfor %}
     </div>
-  </div>
+    <div class="notifications">
+      <p>Не отмеченный сигнал:</p>
 
-  <script>
-    async function read() {
-      try {
-        let date_time = new Date().getTime()
-        console.log(date_time)
-    
-        let response = await fetch(`api/notifications/accepted/?q=${date_time}`)
-    
-        if (!response.ok) {
-          throw new Error('Network response was not ok')
+      <div id="notifications">
+        {% for notific in notifications %}
+          <p>От {{ notific.sender }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="ans_read">
+        <button onclick="read()">otmetit</button>
+        <div id="answer"></div>
+      </div>
+    </div>
+
+    <script>
+      async function read() {
+        try {
+          let date_time = Date.now()
+          //let date_time = new Date().getTime()
+          console.log(date_time)
+      
+          let response = await fetch(`api/notifications/accepted/?q=${date_time}`)
+      
+          if (!response.ok) {
+            throw new Error('Network response was not ok')
+          }
+      
+          let data = await response.json()
+      
+          let answer = document.getElementById('answer')
+          let notifications = document.getElementById('notifications')
+          //let notifications = document.getElementsByClassName('notifications')
+      
+          if (answer) {
+            answer.innerHTML = data.res
+            notifications.innerHTML = ''
+            console.log(data.res)
+          } else {
+            console.error('Element with id "answer" not found')
+          }
+        } catch (error) {
+          console.error('Fetch error:', error)
         }
-    
-        let data = await response.json()
-    
-        let answer = document.getElementById('answer')
-        if (answer) {
-          answer.innerHTML = data.res
-          console.log(data.res)
-        } else {
-          console.error('Element with id "answer" not found')
-        }
-      } catch (error) {
-        console.error('Fetch error:', error)
       }
-    }
-  </script>
-  <style>
-    #answer {
-      text-align: center;
-      width: 100px;
-      height: 26px;
-    
-      background-color: azure;
-    }
-    .ans_read {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .user {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-  </style>
+    </script>
+    <style>
+      #answer {
+        text-align: center;
+        width: 100px;
+        height: 26px;
+      
+        background-color: azure;
+      }
+      .ans_read {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+    </style>
+  {% endif %}
 {% endblock %}
